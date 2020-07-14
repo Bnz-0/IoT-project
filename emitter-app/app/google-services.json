@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1028133041384",
+    "firebase_url": "https://dibris-iot-project.firebaseio.com",
+    "project_id": "dibris-iot-project",
+    "storage_bucket": "dibris-iot-project.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1028133041384:android:b70b0198972b6095a7455d",
+        "android_client_info": {
+          "package_name": "com.example.icts_emitter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1028133041384-9k5ro80tfoic6p1u2l0e3k7nvkuks2us.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGekrVwOC0pP7xVn_Cn3MCL4LMkGr6Te0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1028133041384-9k5ro80tfoic6p1u2l0e3k7nvkuks2us.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
