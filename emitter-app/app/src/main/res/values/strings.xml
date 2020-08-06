@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">ICTS-emitter</string>
     <string name="uuid">aa5462a4-f112-4ce8-8e15-830096af8e12</string>
+    <string name="API_url" >https://TODO</string>
 </resources>
