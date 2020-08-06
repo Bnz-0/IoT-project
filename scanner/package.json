@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "node-ble": "^1.2.0"
+    "@abandonware/noble": "^1.9.2-9",
+    "noble": "^1.9.1"
   }
 }
