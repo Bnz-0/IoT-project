@@ -9,8 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@abandonware/noble": "^1.9.2-9",
-	"noble": "^1.9.1",
-	"firebase-admin": "^8.13.0"
+    "noble": "^1.9.1",
+    "firebase-admin": "^8.13.0"
   }
 }
