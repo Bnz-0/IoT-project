@@ -9,8 +9,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "noble": "^1.9.1",
+    "dotenv": "^8.2.0",
     "firebase": "^6.13.4",
-    "firebase-admin": "^6.13.4"
+    "firebase-admin": "^6.13.4",
+    "noble": "^1.9.1"
   }
 }

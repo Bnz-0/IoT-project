@@ -1,6 +1,5 @@
 'use strict'
-const fs = require('fs');
-
+require('dotenv').config();
 
 module.exports = {
     logInScanner: logInScanner,
@@ -9,9 +8,7 @@ module.exports = {
 
 
 async function logInScanner(auth){
-	let scannerCredentials = JSON.parse(fs.readFileSync('./scannerPermission.json'));
-	console.log(scannerCredentials);
-	const cred = await auth.signInWithEmailAndPassword(scannerCredentials.email,scannerCredentials.password);
+	const cred = await auth.signInWithEmailAndPassword(process.env.SCANNER_EMAIL,process.env.SCANNER_PASSWORD);
 	console.log("Scanner connected to backend.");
 
 }
