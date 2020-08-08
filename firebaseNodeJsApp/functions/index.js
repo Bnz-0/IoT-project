@@ -1,16 +1,24 @@
+/*
+* 1) *si apre l'app: app -> UID,FCM,ID2 -> firebase
+* 2) app -> advertising(ID2) -> scanner
+* 3) scanner -> ID2 -> firebase
+* */
+const MovementType = Object.freeze({"ENTRY": true, "EXIT":false});
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const express = require('express');
 const bodyParser = require('body-parser');
 const serviceAccount = require("./permission.json");
-const app = express();
-app.use(bodyParser.json());
 admin.initializeApp({
  credential: admin.credential.cert(serviceAccount),
  databaseURL: "https://dibris-iot-project.firebaseio.com"
 });
 const db = admin.firestore();
-const MovementType = Object.freeze({"ENTRY": true, "EXIT":false});
+
+
+const app = express();
+app.use(bodyParser.json());
+
 
 
 
@@ -67,36 +75,63 @@ async function calculateMovementType(room,userId){
   }
 }
 
+
+async function retrieveFcm(userId2){
+  const usersCollection = await db.collection('users');
+  const snapshot = await usersCollection.where('uid2', '==', userId2).limit(1).get();
+  if (snapshot.empty) {
+    // TODO throw Error
+    return "";
+  }else{
+    return snapshot.docs[0].get("fcm");
+  }
+}
+
+
+app.post('/api/register-fcm-token', async (req,res) => {
+  try{
+    let fcmToken = req.body.fcmToken;
+    let uid = req.body.userId;
+    await db.collection('users').doc(uid).set({
+      fcm: fcmToken
+    });
+    return res.status(200).send("fcm successfully updated.");
+  }catch(error){
+    console.log(error);
+    return res.status(500).send(error);
+  }
+});
+
+
+app.get('/api/scanner',async(req,res)=>{
+  admin.auth().setCustomUserClaims("Ou5RmTxMcJgVUeYhPOKQmu9XLyJ2", {scanner: true}).then(() => {
+    return res.status(200).send("ok");
+});
+});
 app.post('/api/register-movement-room', async (req,res) => { //todo controllare bene gli await ecc
   try{
-    let room = req.body.room;
-    let userId = req.body.userId;
-    let fcmToken = req.body.fcmToken;
-    console.log(room,userId);
-    // calculated fields
-    let timestamp = new Date();
-    let entrata = await calculateMovementType(room,userId);
+    if(req.context.auth.token.scanner != true){
+      return res.status(200).send("Unsufficient permission.");// todo change
+    }
+    let room = req.body.room,
+      userId2 = req.body.userId2,
+      timestamp = new Date(),
+      fcmToken = await retrieveFcm(userId2),
+      entrata = await calculateMovementType(room,userId2);
     const roomRef = await db.collection('rooms').doc(room);
     const roomDoc = await roomRef.get();
-    if ( entrata ){
-      subscribeUserToRoomTopic(fcmToken,room);
-    }else {
-      unsubscribeUserToRoomTopic(fcmToken,room);
-    }
-    await roomRef.collection('movimenti').add(
-      {
-        entrata: entrata,
-        timestamp: timestamp,
-        userId: userId
-      }
-    );
+    entrata?subscribeUserToRoomTopic(fcmToken,room):unsubscribeUserToRoomTopic(fcmToken,room);
+    await roomRef.collection('movimenti').add({
+      entrata: entrata,
+      timestamp: timestamp,
+      userId2: userId2,
+    });
     if (!roomDoc.exists) {
       console.log('No such document!');
       //todo throw
     }
     let newNumOfPeople = roomDoc.data().currentNumberOfPeople+(entrata?1:-1);
     roomRef.update({currentNumberOfPeople:newNumOfPeople});
-    console.log('Document data:', roomDoc.data());
     if(newNumOfPeople > roomDoc.data().peopleLimitNumber){   // todo solo per entrata
       sendAlert(room);
     }
@@ -110,9 +145,21 @@ app.post('/api/register-movement-room', async (req,res) => { //todo controllare 
 exports.app = functions.https.onRequest(app);
 
 
-/* to retrieve subcollection
-const messageRef = db.collection('rooms').doc('roomA')
-  .collection('messages').doc('message1');
-*/
-
-//https://medium.com/better-programming/building-an-api-with-firebase-109041721f77
+exports.processSignUp = functions.auth.user().onCreate((user) => {
+  const customClaims = {
+    userId2: /*todo generate*/ 1,
+    scanner: false
+  };
+  // Set custom user claims on this newly created user.
+  return admin.auth().setCustomUserClaims(user.uid, customClaims)
+    .then(() => {
+      // Update real-time database to notify client to force refresh.
+      const metadataRef = admin.database().ref("metadata/" + user.uid);
+      // Set the refresh time to the current UTC timestamp.
+      // This will be captured on the client to force a token refresh.
+      return metadataRef.set({refreshTime: new Date().getTime()});
+    })
+    .catch(error => {
+      console.log(error);
+    });
+});
