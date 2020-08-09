@@ -9,10 +9,12 @@ import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.ParcelUuid;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 
 import com.android.volley.Request;
@@ -179,4 +181,13 @@ public class MainActivity extends AppCompatActivity {
             advertiser.stopAdvertising(BLECallback);
         advertiserIsRunning = false;
     }
+
+
+
+    public void startLogInActivity(View v){
+        Intent i = new Intent(MainActivity.this, AuthActivity.class);
+        MainActivity.this.startActivity(i);
+        
+    }
+
 }
