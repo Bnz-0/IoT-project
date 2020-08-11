@@ -17,7 +17,7 @@ module.exports.start = function() {
 	noble.on('discover', (peripheral) => {
 		console.log("discovered", peripheral.address);
 		const serviceData = peripheral.advertisement.serviceData;
-		if (serviceData && serviceData.length) 
+		if (serviceData && serviceData.length > 0)
 			this.emit('discover', serviceData[0].data.toString());
 	});
 }

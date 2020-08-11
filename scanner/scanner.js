@@ -1,7 +1,8 @@
-//const scanner = import './ble-scanner';
+'use strict'
 const scannerAuth = require('./scannerAuth.js');
 const dbController = require('./databaseController.js');
 const scanner = require('./debug-scanner');
+//const scanner = require('./ble-scanner');
 const firebase = require('firebase');
 const room = process.argv[2];
 
@@ -18,14 +19,9 @@ const firebaseConfig = {
 };
 
 
-
-
-function discover(devices) {
-	devices.forEach((device) =>
-		dbController.registerMovementDB(db,device,room)
-	);
+function discover(device) {
+	dbController.registerMovementDB(db,device,room)
 }
-
 
 
 /***********************

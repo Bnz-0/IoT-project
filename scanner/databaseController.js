@@ -4,12 +4,12 @@ const firebase = require('firebase');
 const MovementType = Object.freeze({"ENTRY": true, "EXIT":false});
 
 module.exports = {
-    registerMovementDB: registerMovementDB
-  }
+	registerMovementDB: registerMovementDB
+}
 
 
 
-async function sendAlert(roomTopic){
+async function sendAlert(db, roomTopic){
 	const roomDoc = await db.collection('rooms').doc(room).get();
 	const numOfPeople = await roomDoc.data().currentNumberOfPeople;
 	const limit = roomDoc.data().peopleLimitNumber;

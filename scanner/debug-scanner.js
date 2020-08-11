@@ -1,14 +1,13 @@
 'use strict'
 const EventEmitter = require('events');
-const fs = require('fs');
-const DEVICES_FILE = "./devices";
+const prompt = require('prompt-sync')();
+
 
 module.exports = new EventEmitter();
 module.exports.start = function () {
-	setInterval(()=>{
-		const devices = fs.readFileSync(DEVICES_FILE).toString('utf8').split('\n');
-		if(devices[devices.length-1] === '') devices.pop();
-		if(devices.length > 0)
-			this.emit('discover', devices);
-	}, 3000);
+	while(1) {
+		const device = prompt('device to emit: ');
+		if(!device) break;
+		this.emit('discover', device);
+	}
 };
