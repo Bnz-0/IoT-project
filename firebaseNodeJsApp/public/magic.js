@@ -1,38 +1,93 @@
 'use strict'
 const rooms = {};
+const stdColor = {
+	'normal' : 'rgba(54, 162, 235)',
+	'warning': 'rgba(255, 206, 86)',
+	'alert' : 'rgba(255, 99, 132)',
+};
+
+function trimMinutes(date) {
+	const d = new Date(date);
+	d.setMinutes(0);
+	d.setSeconds(0);
+	d.setMilliseconds(0);
+	return d;
+}
 
 function updateDashboard(roomNumber) {
-	let chart = document.getElementById("room_"+roomNumber);
-	
-	if(!chart) { //create a new one
-		const container = document.createElement('div');
-		container.className = "chart"
-		chart = document.createElement('canvas');
-		chart.id = "room_"+roomNumber;
-		chart.height = "400px";
-		
-		container.appendChild(chart);
-		document.getElementById('dashboard').appendChild(container);
+	const data = [];
+	const labels = [];
+	const colors = [];
+	let current = 0;
+	let currentHour = null;
+
+	// push "current" into "data" for the number oh hours that separate "from" to "to"
+	function pushData(from, to) {
+		const curr = new Date(from.getTime());
+		const color = current >= rooms[roomNumber].peopleLimitNumber ?
+			stdColor['alert']
+			: current >= rooms[roomNumber].peopleLimitNumber * 0.7 ?
+				stdColor['warning']
+				: stdColor['normal'];
+		do {
+			data.push(current);
+			labels.push(curr.toLocaleString());
+			colors.push(color);
+			curr.setHours(curr.getHours()+1);
+		} while(curr.getTime() < to.getTime());
+		return to;
 	}
 
-	const data = [];
-	let current = 0;
+	// fill the data from the oldest movements
 	for(let m of rooms[roomNumber].movements.sort((a,b) => a.timestamp-b.timestamp)) {
+		if(currentHour === null)
+			currentHour = trimMinutes(m.timestamp);
+		
+		if(currentHour.getTime() !== trimMinutes(m.timestamp).getTime())
+			currentHour = pushData(currentHour, trimMinutes(m.timestamp));
+		
 		current += m.entrata ? +1 : -1;
-		data.push(current);
 	}
+
+	// fill the data form the latest movements to now
+	pushData(currentHour, trimMinutes(new Date()));
+	
 	console.log(data)
 
-	new Chart(chart, { // TODO: dates on x axis!
-		type: 'line',
-		data: {	// BUG: it shows only the first 2 entry
+
+	let chartContainer = document.getElementById("room_"+roomNumber);
+	const chart = document.createElement('canvas');
+	chart.height = "400px";
+
+	if(!chartContainer) {
+		chartContainer = document.createElement('div');
+		chartContainer.className = "chart";
+		chartContainer.id = "room_"+roomNumber;	
+		document.getElementById('dashboard').appendChild(chartContainer);
+	} else {
+		while(chartContainer.firstChild)
+			chartContainer.firstChild.remove();
+	}
+	chartContainer.appendChild(chart);
+
+	new Chart(chart, {
+		type: 'bar',
+		data: {
+			labels: labels,
 			datasets: [{
-				label: 'Number of peoples',
 				data: data,
+				backgroundColor: colors,
 				borderWidth: 1
 			}]
 		},
 		options: {
+			title: {
+				display: true,
+            	text: 'Room '+roomNumber+' (max capacity: '+rooms[roomNumber].peopleLimitNumber+')',
+			},
+			legend: {
+				display: false
+			},
 			scales: {
 				yAxes: [{
 					ticks: {
@@ -52,9 +107,9 @@ db.collection('rooms').onSnapshot((snapshot) => {
 		const {roomNumber, currentNumberOfPeople, peopleLimitNumber} = doc.data();
 		console.log('room data', {roomNumber, currentNumberOfPeople, peopleLimitNumber});
 		if(!rooms[roomNumber]) { //initialize the data for this room
-			const yesterday = new Date();
-			yesterday.setDate(yesterday.getDate() - 1);
-			rooms[roomNumber] = {movements: [], last: yesterday};
+			const startingTime = new Date();
+			startingTime.setDate(startingTime.getDate() - 7);
+			rooms[roomNumber] = {movements: [], last: startingTime};
 			console.log('init', roomNumber, rooms[roomNumber]);
 		}
 		rooms[roomNumber].currentNumberOfPeople = currentNumberOfPeople;
