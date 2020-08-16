@@ -33,9 +33,11 @@ if(!room){
 }
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const auth = firebase.auth()
-scannerAuth.logOutScanner(auth);
-scannerAuth.logInScanner(auth);
-scanner.start();
+const auth = firebase.auth();
 scanner.on('discover', discover);
-console.log("scanner for",room,"started!");
+scannerAuth.logOutScanner(auth).then(()=>{
+	scannerAuth.logInScanner(auth).then(()=>{
+		console.log("scanner for",room,"started!")
+		scanner.start();
+	});
+});

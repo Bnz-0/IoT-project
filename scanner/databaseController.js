@@ -16,20 +16,7 @@ async function sendAlert(db, roomTopic){
 	if(numOfPeople <= limit){
 		return;
 	}
-  let message = {
-    data: {
-      message: "Troppa gente scappa!"
-    },
-    topic: roomTopic
-  };
-  admin.messaging().send(message)
-    .then((response) => {
-      // Response is a message ID string.
-      console.log('Successfully sent message:', response);
-    })
-    .catch((error) => {
-      console.log('Error sending message:', error);
-    });
+	// todo send https request to
 }
 
 async function calculateMovementType(db,room,userId2){
@@ -51,7 +38,7 @@ async function calculateMovementType(db,room,userId2){
 
 async function retrieveFcm(userId2){
   const usersCollection = await db.collection('users');
-  const snapshot = await usersCollection.where('uid2', '==', userId2).limit(1).get();
+  const snapshot = await usersCollection.where('uid2', '==', userId2).limit(1).get();// todo userId2 deve essere nome documento
   if (snapshot.empty) {
     // TODO throw Error
     return "";
@@ -65,10 +52,10 @@ async function retrieveFcm(userId2){
 async function registerMovementDB(db,userId2,room){
 	try{
 		const timestamp = new Date();
-			//fcmToken = await retrieveFcm(userId2),
-		const entrata = await calculateMovementType(db,room,userId2)
+		//const fcmToken = await retrieveFcm(userId2);
+		const entrata = await calculateMovementType(db,room,userId2);
 		const roomRef = await db.collection('rooms').doc(room);
-		//entrata?subscribeUserToRoomTopic(fcmToken,room):unsubscribeUserToRoomTopic(fcmToken,room);
+		entrata?; //todo http://localhost:5000/dibris-iot-project/us-central1/app/api/un-subscribe-fcm-to-topic;
 
 		/*LOG the movement*/
 		//async op.
@@ -88,5 +75,6 @@ async function registerMovementDB(db,userId2,room){
 	}catch(error){
 		console.log(error);
 	}
+	console.log(`movement registered for ${db} ${room} ${userId2}`);
 	return;
 }
