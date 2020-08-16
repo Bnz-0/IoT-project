@@ -6,13 +6,6 @@ const stdColor = {
 	'alert' : 'rgba(255, 99, 132)',
 };
 
-function trimMinutes(date) {
-	const d = new Date(date);
-	d.setMinutes(0);
-	d.setSeconds(0);
-	d.setMilliseconds(0);
-	return d;
-}
 
 function updateDashboard(roomNumber) {
 	const data = [];
@@ -23,7 +16,7 @@ function updateDashboard(roomNumber) {
 
 	// push "current" into "data" for the number oh hours that separate "from" to "to"
 	function pushData(from, to) {
-		const curr = new Date(from.getTime());
+		let curr = new Date(from.getTime());
 		const color = current >= rooms[roomNumber].peopleLimitNumber ?
 			stdColor['alert']
 			: current >= rooms[roomNumber].peopleLimitNumber * 0.7 ?
@@ -33,7 +26,7 @@ function updateDashboard(roomNumber) {
 			data.push(current);
 			labels.push(curr.toLocaleString());
 			colors.push(color);
-			curr.setHours(curr.getHours()+1);
+			curr = curr.add("1h");
 		} while(curr.getTime() < to.getTime());
 		return to;
 	}
@@ -41,16 +34,16 @@ function updateDashboard(roomNumber) {
 	// fill the data from the oldest movements
 	for(let m of rooms[roomNumber].movements.sort((a,b) => a.timestamp-b.timestamp)) {
 		if(currentHour === null)
-			currentHour = trimMinutes(m.timestamp);
+			currentHour = m.timestamp.trim('y','h');
 		
-		if(currentHour.getTime() !== trimMinutes(m.timestamp).getTime())
-			currentHour = pushData(currentHour, trimMinutes(m.timestamp));
+		if(currentHour.getTime() !== m.timestamp.trim('y','h').getTime())
+			currentHour = pushData(currentHour, m.timestamp.trim('y','h'));
 		
 		current += m.entrata ? +1 : -1;
 	}
 
 	// fill the data form the latest movements to now
-	pushData(currentHour, trimMinutes(new Date()));
+	pushData(currentHour, new Date().trim('y','h'));
 	
 	console.log(data)
 
