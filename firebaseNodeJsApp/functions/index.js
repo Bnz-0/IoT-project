@@ -20,9 +20,6 @@ app.use(bodyParser.json());
 
 
 
-//TODO l api è aperat chiunque può eseguire le funzioni:
-//impostare che solo scanner può chimarle
-
 /* ******************************************* */
 async function subscribeUserToRoomTopic(fcmToken,roomTopic){
   await admin.messaging().subscribeToTopic(fcmToken, roomTopic)
@@ -67,6 +64,8 @@ async function sendAlert(roomTopic){
 /*EXPRESS ROUTES****************************** */
 
 app.post('/api/un-subscribe-fcm-to-topic', async (req,res) => {
+  //TODO l api è aperat chiunque può eseguire le funzioni:
+  //impostare che solo scanner può chimarle
   try{
     let fcm = req.body.fcm;
     let topic = req.body.topic;
@@ -80,6 +79,8 @@ app.post('/api/un-subscribe-fcm-to-topic', async (req,res) => {
 });
 
 app.post('/api/send-alert', async (req,res) => {
+  //TODO l api è aperat chiunque può eseguire le funzioni:
+  //impostare che solo scanner può chimarle
   try{
     let topic = req.body.topic;
     await sendAlert(topic);

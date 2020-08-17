@@ -1,6 +1,7 @@
 'use strict'
+require('dotenv').config();
 const firebase = require('firebase');
-
+const request = require('request');
 const MovementType = Object.freeze({"ENTRY": true, "EXIT":false});
 
 module.exports = {
@@ -8,16 +9,6 @@ module.exports = {
 }
 
 
-
-async function sendAlert(db, roomTopic){
-	const roomDoc = await db.collection('rooms').doc(room).get();
-	const numOfPeople = await roomDoc.data().currentNumberOfPeople;
-	const limit = roomDoc.data().peopleLimitNumber;
-	if(numOfPeople <= limit){
-		return;
-	}
-	// todo send https request to
-}
 
 async function calculateMovementType(db,room,userId2){
   const currentPeopleSet = await db.collection('rooms').doc(room).collection('currentPeople');
@@ -48,14 +39,53 @@ async function retrieveFcm(userId2){
 }
 
 
+async function callApiFunctionUnSubscribeFcmToTopic(fcm,entrata,topic){
+	let options = {
+		'method': 'POST',
+		'url': process.env.CLOUD_FUNCTION_BASE_URL+'api/un-subscribe-fcm-to-topic',
+		'headers': {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({
+			fcm:fcm,
+			subscribe:entrata,
+			topic:topic
+		})
+	};
+	let result = await request(options); // TODO PARSE AND CONSOLE LOG BODY message
+	//if (error) throw new Error(error);
+	//console.log(result);
+}
+
+async function callApiFunctionSendAlert(db,roomTopic){
+	let options = {
+	  'method': 'POST',
+	  'url': process.env.CLOUD_FUNCTION_BASE_URL+'api/send-alert',
+	  'headers': {
+	    'Content-Type': 'application/json'
+	  },
+	  body: JSON.stringify({topic:roomTopic})
+	};
+	const roomDoc = await db.collection('rooms').doc(roomTopic).get();
+	const numOfPeople = await roomDoc.data().currentNumberOfPeople;
+	const limit = roomDoc.data().peopleLimitNumber;
+	if(numOfPeople > limit){
+		let result = await request(options);
+		//if (error) throw new Error(error);
+		//console.log(result);  // TODO PARSE AND CONSOLE LOG BODY message
+	}
+}
 
 async function registerMovementDB(db,userId2,room){
 	try{
 		const timestamp = new Date();
-		//const fcmToken = await retrieveFcm(userId2);
+		const fcmToken = "epk9uUM7Sj-L8Vy5a9xojb:APA91bEMUZPy99QVk7ocUxFaUsKXPhmeIMXbK6B9pUWAlnvAfLSPMkrIVpoF1WyOKMmS12621u-tNjsI6gLs0HgNztOM8xXFwbQnP7E-KSKhGXn79rBaerNs0VvVDJ1mEDdaL5ov35vC";
+		 //= await retrieveFcm(userId2);
 		const entrata = await calculateMovementType(db,room,userId2);
 		const roomRef = await db.collection('rooms').doc(room);
-		entrata?; //todo http://localhost:5000/dibris-iot-project/us-central1/app/api/un-subscribe-fcm-to-topic;
+
+		//send request to cloud function to subscribe to  roomTopic
+		await callApiFunctionUnSubscribeFcmToTopic(fcmToken,entrata,room);
 
 		/*LOG the movement*/
 		//async op.
@@ -70,7 +100,8 @@ async function registerMovementDB(db,userId2,room){
 		roomRef.update({
 			currentNumberOfPeople:firebase.firestore.FieldValue.increment(entrata?1:-1)
 		}).then(()=>{
-			//sendAlert(room);
+			// check if we need to send alert message
+			callApiFunctionSendAlert(db,room);
 		});
 	}catch(error){
 		console.log(error);
