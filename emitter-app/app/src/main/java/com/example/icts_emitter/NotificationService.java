@@ -40,7 +40,7 @@ public class NotificationService extends FirebaseMessagingService {
     }
 
     public static String getToken(Context context) {
-        return context.getSharedPreferences("_", MODE_PRIVATE).getString("fb", "empty");
+        return context.getSharedPreferences("_", MODE_PRIVATE).getString(FCM_FIELD, "empty");
     }
 
     private void sendRegistrationTokenToServer(String token){
