@@ -38,6 +38,7 @@ public class AuthActivity extends AppCompatActivity {
                             Toast.makeText(AuthActivity.this, "Registration success.",
                                     Toast.LENGTH_SHORT).show();
                             //mAuth.getCurrentUser();
+                            //create document for user
                             finish();
                         } else {
                             // If sign in fails, display a message to the user.

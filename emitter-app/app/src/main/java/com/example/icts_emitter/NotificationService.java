@@ -1,5 +1,6 @@
 package com.example.icts_emitter;
 
+import android.content.Context;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -7,7 +8,6 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
-
 
 public class NotificationService extends FirebaseMessagingService {
     private static final String USER_COLLECTION="users";
@@ -22,12 +22,11 @@ public class NotificationService extends FirebaseMessagingService {
     }
 
 
-    /*todo check if token is already updated?(is really necessary?)*/
-    /* or onnewToken already handle it?*/
 
     @Override
     public void onNewToken(String token) {
         Log.d("new token ", "Refreshed token: " + token);
+        getSharedPreferences("_", MODE_PRIVATE).edit().putString(FCM_FIELD, token).apply();
         sendRegistrationTokenToServer(token);
     }
 
@@ -40,6 +39,9 @@ public class NotificationService extends FirebaseMessagingService {
         }
     }
 
+    public static String getToken(Context context) {
+        return context.getSharedPreferences("_", MODE_PRIVATE).getString("fb", "empty");
+    }
 
     private void sendRegistrationTokenToServer(String token){
         db.collection(USER_COLLECTION).document(userId2)
@@ -57,4 +59,27 @@ public class NotificationService extends FirebaseMessagingService {
                     }
                 });
     }
+
+
+    /*
+    public void createUserDocument(){
+        Map<String, Object> userDoc = new HashMap<>();
+        userDoc.put("fcm",getToken(Context));
+        db.collection("users").document(userId2)
+                .set(userDoc)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.d(TAG, "DocumentSnapshot successfully written!");
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w(TAG, "Error writing document", e);
+                    }
+                });
+
+    }*/
+
 }
