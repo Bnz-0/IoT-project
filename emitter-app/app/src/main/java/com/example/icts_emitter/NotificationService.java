@@ -1,33 +1,28 @@
 package com.example.icts_emitter;
-
 import android.content.Context;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import java.util.Objects;
+
+import static com.example.icts_emitter.SharedPreferencesStore.FCM;
+import static com.example.icts_emitter.SharedPreferencesStore.USER_COLLECTION;
+
 public class NotificationService extends FirebaseMessagingService {
-    private static final String USER_COLLECTION="users";
-    private static final String FCM_FIELD="fcm";
     private static final String TAG = "NotificationService";
-    private final FirebaseFirestore db;
-    private final String userId2;
-
-    public NotificationService(FirebaseFirestore db,String userId2) {
-        this.db = db;
-        this.userId2 = userId2;
-    }
-
 
 
     @Override
     public void onNewToken(String token) {
         Log.d("new token ", "Refreshed token: " + token);
-        getSharedPreferences("_", MODE_PRIVATE).edit().putString(FCM_FIELD, token).apply();
-        sendRegistrationTokenToServer(token);
+        SharedPreferencesStore.setFcm(getApplicationContext(),token);
+        sendRegistrationTokenToServer(getApplicationContext(),token);
     }
 
     @Override
@@ -39,13 +34,12 @@ public class NotificationService extends FirebaseMessagingService {
         }
     }
 
-    public static String getToken(Context context) {
-        return context.getSharedPreferences("_", MODE_PRIVATE).getString(FCM_FIELD, "empty");
-    }
 
-    private void sendRegistrationTokenToServer(String token){
-        db.collection(USER_COLLECTION).document(userId2)
-                .update(FCM_FIELD,token)
+    public static void sendRegistrationTokenToServer(Context context,String token){
+        String longUid = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
+        FirebaseFirestore.getInstance().collection(USER_COLLECTION)
+                .document(longUid)
+                .update(FCM,token)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
@@ -59,27 +53,5 @@ public class NotificationService extends FirebaseMessagingService {
                     }
                 });
     }
-
-
-    /*
-    public void createUserDocument(){
-        Map<String, Object> userDoc = new HashMap<>();
-        userDoc.put("fcm",getToken(Context));
-        db.collection("users").document(userId2)
-                .set(userDoc)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Log.d(TAG, "DocumentSnapshot successfully written!");
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w(TAG, "Error writing document", e);
-                    }
-                });
-
-    }*/
 
 }

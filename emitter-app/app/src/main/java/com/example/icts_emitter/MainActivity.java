@@ -2,56 +2,47 @@ package com.example.icts_emitter;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.BluetoothLeAdvertiser;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.ParcelUuid;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
-
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.HashMap;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import java.util.Objects;
 import java.util.UUID;
+import static com.example.icts_emitter.SharedPreferencesStore.USERDI2;
+import static com.example.icts_emitter.SharedPreferencesStore.USER_COLLECTION;
 
 public class MainActivity extends AppCompatActivity {
-    private final Context context = this;
-    private String ID2 = null;
+    private static final String TAG = "MainActivity";
+    private String id2;
+    private String fcm;
     private BluetoothLeAdvertiser advertiser;
     private boolean advertiserIsRunning = false;
+
+
     private AdvertiseCallback BLECallback = new AdvertiseCallback() {
         @Override
         public void onStartFailure(int errCode){
-            Log.d("AdvertiseCallback", "Advertiser failed starting with code "+errCode);
+            //Log.d("AdvertiseCallback", "Advertiser failed starting with code "+errCode);
             setUiMsg("Advertiser failed starting");
             super.onStartFailure(errCode);
         }
 
         @Override
         public void onStartSuccess(AdvertiseSettings settingsInEffect){
-            Log.d("AdvertiseCallback", "Advertiser started successfully");
+            //Log.d("AdvertiseCallback", "Advertiser started successfully");
             setUiMsg("ALL OK");
             super.onStartSuccess(settingsInEffect);
         }
@@ -61,13 +52,18 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        ID2 = getSharedPreferences("id2", MODE_PRIVATE)
-                .getString("id2", null);
     }
 
     @Override
     protected void onStart(){
         super.onStart();
+        id2 = SharedPreferencesStore.getUserId2(getApplicationContext());
+        fcm = SharedPreferencesStore.getFcm(getApplicationContext());
+        if(id2 == null){
+            String longUid = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
+            retrieveId2(longUid);
+            return;
+        }
         startItcsEmitter();
     }
 
@@ -78,11 +74,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startItcsEmitter() {
-        if(ID2 == null) { //request it to api
-            getDeviceToken(); //it call startItcsEmitter() after retrieve the id2
-        }
-        else if(!advertiserIsRunning) { //start the advertiser
-
+        if(!advertiserIsRunning) { //start the advertiser
             if (BluetoothAdapter.getDefaultAdapter() == null)
                 setUiMsg("Not supported");
             else {
@@ -100,6 +92,74 @@ public class MainActivity extends AppCompatActivity {
     private void setUiMsg(String msg) {
         ((TextView) findViewById(R.id.default_textview)).setText(msg);
     }
+
+    private void startBLE() {
+        if(advertiserIsRunning) return;
+
+        AdvertiseSettings settings = new AdvertiseSettings.Builder()
+                .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
+                .setConnectable(true)
+                .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_LOW)
+                .setTimeout(0)
+                .build();
+
+        ParcelUuid pUUID = new ParcelUuid(UUID.fromString(getString(R.string.uuid)));
+        AdvertiseData data = new AdvertiseData.Builder()
+                .setIncludeDeviceName(false)
+          //      .addServiceUuid(pUUID)
+                .addServiceData(pUUID, id2.getBytes())
+                .build();
+
+        advertiser.startAdvertising(settings, data, BLECallback);
+        advertiserIsRunning = true;
+    }
+
+    private void stopBLE() {
+        if(advertiserIsRunning)
+            advertiser.stopAdvertising(BLECallback);
+        advertiserIsRunning = false;
+    }
+
+    public void startLogInActivity(View v){
+        Intent i = new Intent(MainActivity.this, AuthActivity.class);
+        MainActivity.this.startActivity(i);
+    }
+
+
+
+    private void retrieveId2(String longUid){
+        DocumentReference docRef = FirebaseFirestore.getInstance().collection(USER_COLLECTION).document(longUid);
+        docRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if (task.isSuccessful()) {
+                    DocumentSnapshot document = task.getResult();
+                    if (document.exists()) {
+                        Log.d(TAG, "DocumentSnapshot data: " + document.getData());
+                        id2 = document.getString(USERDI2);
+                        SharedPreferencesStore.setUserId2(getApplicationContext(),id2);
+                        startItcsEmitter();
+                    } else {
+                        Log.d(TAG, "No such document id2");
+                    }
+                } else {
+                    Log.d(TAG, "get failed with ", task.getException());
+                }
+            }
+        });
+    }
+
+
+}
+
+
+
+
+
+
+
+
+/*comment
 
     private void getDeviceToken() {
         FirebaseInstanceId.getInstance().getInstanceId()
@@ -124,7 +184,6 @@ public class MainActivity extends AppCompatActivity {
                         /*
                         // Instantiate the RequestQueue.
                         RequestQueue volleyQueue = Volley.newRequestQueue(context);
-
                         JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, getString(R.string.API_url), new JSONObject(params),
                             new Response.Listener<JSONObject>() {
                                 @Override
@@ -150,44 +209,11 @@ public class MainActivity extends AppCompatActivity {
 
                         volleyQueue.add(request);
                         */
-                    }
-                });
-    }
+                   /* comment
 
 
-    private void startBLE() {
-        if(advertiserIsRunning) return;
+                   }
+                            });
+                            }
 
-        AdvertiseSettings settings = new AdvertiseSettings.Builder()
-                .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
-                .setConnectable(true)
-                .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_LOW)
-                .setTimeout(0)
-                .build();
-
-        ParcelUuid pUUID = new ParcelUuid(UUID.fromString(getString(R.string.uuid)));
-        AdvertiseData data = new AdvertiseData.Builder()
-                .setIncludeDeviceName(false)
-          //      .addServiceUuid(pUUID)
-                .addServiceData(pUUID, ID2.getBytes())
-                .build();
-
-        advertiser.startAdvertising(settings, data, BLECallback);
-        advertiserIsRunning = true;
-    }
-
-    private void stopBLE() {
-        if(advertiserIsRunning)
-            advertiser.stopAdvertising(BLECallback);
-        advertiserIsRunning = false;
-    }
-
-
-
-    public void startLogInActivity(View v){
-        Intent i = new Intent(MainActivity.this, AuthActivity.class);
-        MainActivity.this.startActivity(i);
-        
-    }
-
-}
+                      comment      */

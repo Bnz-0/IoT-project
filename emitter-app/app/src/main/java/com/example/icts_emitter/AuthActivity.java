@@ -2,15 +2,25 @@ package com.example.icts_emitter;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import java.util.HashMap;
+import java.util.Map;
+import static com.example.icts_emitter.SharedPreferencesStore.FCM;
+import static com.example.icts_emitter.SharedPreferencesStore.USERDI2;
+import static com.example.icts_emitter.SharedPreferencesStore.USER_COLLECTION;
 
 public class AuthActivity extends AppCompatActivity {
     private static final String TAG = "LogInActivity";
@@ -39,6 +49,7 @@ public class AuthActivity extends AppCompatActivity {
                                     Toast.LENGTH_SHORT).show();
                             //mAuth.getCurrentUser();
                             //create document for user
+                            createUserDocument(mAuth.getUid());
                             finish();
                         } else {
                             // If sign in fails, display a message to the user.
@@ -61,7 +72,8 @@ public class AuthActivity extends AppCompatActivity {
                             Toast.makeText(AuthActivity.this, "Log in  success.",
                                     Toast.LENGTH_SHORT).show();
                            // FirebaseUser user = mAuth.getCurrentUser();
-                            //updateUI(user);
+                            Context c = getApplicationContext();
+                            NotificationService.sendRegistrationTokenToServer(c,SharedPreferencesStore.getFcm(c));
                             finish();
                         } else {
                             // If sign in fails, display a message to the user.
@@ -77,5 +89,34 @@ public class AuthActivity extends AppCompatActivity {
     public void logOut() {
         mAuth.signOut();
         //updateUI(null);
+    }
+
+
+    // temporaneo. Sarebbe figo usare una function per generare lo userId2
+    static int i=1;
+    public String retrieveNewUserId2(){
+        return String.valueOf(i);
+    }
+
+    public void createUserDocument(String longUid){
+        String userId2 = retrieveNewUserId2();
+        SharedPreferencesStore.setUserId2(getApplicationContext(),userId2);
+        Map<String, Object> userDoc = new HashMap<>();
+        userDoc.put(FCM,SharedPreferencesStore.getFcm(getApplicationContext()));
+        userDoc.put(USERDI2,userId2);
+        FirebaseFirestore.getInstance().collection(USER_COLLECTION).document(longUid)
+                .set(userDoc)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.d(TAG, "DocumentSnapshot successfully written!");
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w(TAG, "Error writing document", e);
+                    }
+                });
     }
 }
