@@ -27,13 +27,14 @@ async function calculateMovementType(db,room,userId2){
 }
 
 
-async function retrieveFcm(userId2){ //TODO CHANGE 
-  const usersCollection = await db.collection('users').doc(userId2);
-  const snapshot = await usersCollection.where('uid2', '==', userId2).limit(1).get();// todo userId2 deve essere nome documento
+async function retrieveFcm(userId2,db){
+  const usersCollection = await db.collection('users');
+  const snapshot = await usersCollection.where('userId2', '==', userId2).limit(1).get();
   if (snapshot.empty) {
     // TODO throw Error
     return "";
   }else{
+		console.log();
     return snapshot.docs[0].get("fcm");
   }
 }
@@ -79,8 +80,7 @@ async function callApiFunctionSendAlert(db,roomTopic){
 async function registerMovementDB(db,userId2,room){
 	try{
 		const timestamp = new Date();
-		const fcmToken = "epk9uUM7Sj-L8Vy5a9xojb:APA91bEMUZPy99QVk7ocUxFaUsKXPhmeIMXbK6B9pUWAlnvAfLSPMkrIVpoF1WyOKMmS12621u-tNjsI6gLs0HgNztOM8xXFwbQnP7E-KSKhGXn79rBaerNs0VvVDJ1mEDdaL5ov35vC";
-		 //= await retrieveFcm(userId2);
+		const fcmToken = await retrieveFcm(userId2,db);
 		const entrata = await calculateMovementType(db,room,userId2);
 		const roomRef = await db.collection('rooms').doc(room);
 
