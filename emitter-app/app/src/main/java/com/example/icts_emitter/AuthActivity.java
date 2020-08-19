@@ -96,9 +96,13 @@ public class AuthActivity extends AppCompatActivity {
     }
 
     public String retrieveNewUserId2(){
-        byte[] array = new byte[10];
-        new Random().nextBytes(array);
-        return new String(array, Charset.forName("UTF-8"));
+        int n = 10;
+        String charSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz";
+
+        StringBuilder sb = new StringBuilder(n);
+        for (int i = 0; i < n; i++)
+            sb.append(charSet.charAt(new Random().nextInt(n-1)));
+        return sb.toString();
     }
 
     public void createUserDocument(String longUid){

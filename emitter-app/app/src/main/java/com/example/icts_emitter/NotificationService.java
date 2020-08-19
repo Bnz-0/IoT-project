@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -36,9 +37,10 @@ public class NotificationService extends FirebaseMessagingService {
 
 
     public static void sendRegistrationTokenToServer(Context context,String token){
-        String longUid = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if(user == null) return;
         FirebaseFirestore.getInstance().collection(USER_COLLECTION)
-                .document(longUid)
+                .document(user.getUid())
                 .update(FCM,token)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override

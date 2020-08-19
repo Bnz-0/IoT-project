@@ -36,14 +36,14 @@ public class MainActivity extends AppCompatActivity {
     private AdvertiseCallback BLECallback = new AdvertiseCallback() {
         @Override
         public void onStartFailure(int errCode){
-            //Log.d("AdvertiseCallback", "Advertiser failed starting with code "+errCode);
+            Log.d("AdvertiseCallback", "Advertiser failed starting with code "+errCode);
             setUiMsg("Advertiser failed starting");
             super.onStartFailure(errCode);
         }
 
         @Override
         public void onStartSuccess(AdvertiseSettings settingsInEffect){
-            //Log.d("AdvertiseCallback", "Advertiser started successfully");
+            Log.d("AdvertiseCallback", "Advertiser started successfully");
             setUiMsg("ALL OK");
             super.onStartSuccess(settingsInEffect);
         }
@@ -60,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         id2 = SharedPreferencesStore.getUserId2(getApplicationContext());
         fcm = SharedPreferencesStore.getFcm(getApplicationContext());
+        Log.d("id2", id2==null? "null" : id2);
         if(id2 == null){
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if(user == null) return;

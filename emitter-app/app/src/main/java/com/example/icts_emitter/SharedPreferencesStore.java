@@ -20,7 +20,7 @@ public class SharedPreferencesStore {
              fcm = FirebaseInstanceId.getInstance().getToken();
              setFcm(context,fcm);
          }
-        Log.d(TAG, fcm);
+        Log.d(TAG, fcm==null? "null" : fcm);
         return fcm;
     }
 
