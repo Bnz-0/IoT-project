@@ -13,7 +13,7 @@ module.exports.start = function() {
 		else
 			noble.stopScanning();
 	});
-	
+
 	noble.on('discover', (peripheral) => {
 		console.log("discovered", peripheral.address);
 		const serviceData = peripheral.advertisement.serviceData;

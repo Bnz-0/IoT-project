@@ -10,8 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "dotenv": "^8.2.0",
-    "firebase": "^6.13.4",
-    "firebase-admin": "^6.13.4",
+    "firebase": "^7.18.0",
     "noble": "^1.9.1",
     "prompt-sync": "^4.2.0",
     "request": "^2.88.2"

@@ -1,11 +1,16 @@
 'use strict'
 const scannerAuth = require('./scannerAuth.js');
 const dbController = require('./databaseController.js');
-const scanner = require('./debug-scanner');
-//const scanner = require('./ble-scanner');
+//const scanner = require('./debug-scanner');
+const scanner = require('./ble-scanner');
 const firebase = require('firebase');
 const room = process.argv[2];
 
+process.on('unhandledRejection', (err, p) => {
+  console.log('An unhandledRejection occurred');
+  console.log(`Rejected Promise: ${p}`);
+  console.log(`Rejection: ${err}`);
+});
 
 const firebaseConfig = {
 	apiKey: "AIzaSyCKZvPiFvmjtpOaNf7VwzEmdx4JP-miYzQ",
