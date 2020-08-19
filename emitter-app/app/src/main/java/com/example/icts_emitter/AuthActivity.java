@@ -16,8 +16,12 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
+
 import static com.example.icts_emitter.SharedPreferencesStore.FCM;
 import static com.example.icts_emitter.SharedPreferencesStore.USERDI2;
 import static com.example.icts_emitter.SharedPreferencesStore.USER_COLLECTION;
@@ -91,15 +95,15 @@ public class AuthActivity extends AppCompatActivity {
         //updateUI(null);
     }
 
-
-    // temporaneo. Sarebbe figo usare una function per generare lo userId2
-    static int i=1;
     public String retrieveNewUserId2(){
-        return String.valueOf(i);
+        byte[] array = new byte[10];
+        new Random().nextBytes(array);
+        return new String(array, Charset.forName("UTF-8"));
     }
 
     public void createUserDocument(String longUid){
         String userId2 = retrieveNewUserId2();
+        Log.d("userId2", userId2);
         SharedPreferencesStore.setUserId2(getApplicationContext(),userId2);
         Map<String, Object> userDoc = new HashMap<>();
         userDoc.put(FCM,SharedPreferencesStore.getFcm(getApplicationContext()));

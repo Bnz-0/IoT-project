@@ -16,6 +16,7 @@ import android.widget.TextView;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -60,8 +61,9 @@ public class MainActivity extends AppCompatActivity {
         id2 = SharedPreferencesStore.getUserId2(getApplicationContext());
         fcm = SharedPreferencesStore.getFcm(getApplicationContext());
         if(id2 == null){
-            String longUid = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
-            retrieveId2(longUid);
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if(user == null) return;
+            retrieveId2(user.getUid());
             return;
         }
         startItcsEmitter();
