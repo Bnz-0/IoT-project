@@ -101,7 +101,7 @@ public class AuthActivity extends AppCompatActivity {
 
         StringBuilder sb = new StringBuilder(n);
         for (int i = 0; i < n; i++)
-            sb.append(charSet.charAt(new Random().nextInt(n-1)));
+            sb.append(charSet.charAt(new Random().nextInt(charSet.length()-1)));
         return sb.toString();
     }
 
