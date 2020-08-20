@@ -96,7 +96,7 @@ async function registerMovementDB(db,userId2,room){
 		});
 
 		/**Update Room status*/
-		const roomDoc = await roomRef.get();
+		const roomDoc = await roomRef.get(); //TODO: unused?
 		roomRef.update({
 			currentNumberOfPeople:firebase.firestore.FieldValue.increment(entrata?1:-1)
 		}).then(()=>{

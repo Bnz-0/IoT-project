@@ -25,6 +25,7 @@ const firebaseConfig = {
 
 
 function discover(device) {
+	// TODO: @firebase/firestore: Firestore (7.18.0): Connection GRPC stream error. Code: 1 Message: 1 CANCELLED: Disconnecting idle stream. Timed out waiting for new targets.
 	dbController.registerMovementDB(db,device,room)
 }
 
