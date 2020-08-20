@@ -98,12 +98,15 @@ console.log(db? 'database connected' : 'fail to retrieve database');
 db.collection('rooms').onSnapshot((snapshot) => {
 	snapshot.forEach(doc => {
 		const {roomNumber, currentNumberOfPeople, peopleLimitNumber} = doc.data();
-		console.log('room data', {roomNumber, currentNumberOfPeople, peopleLimitNumber});
+		console.log('room data:', {roomNumber, currentNumberOfPeople, peopleLimitNumber});
 		if(!rooms[roomNumber]) { //initialize the data for this room
 			const startingTime = new Date();
 			startingTime.setDate(startingTime.getDate() - 7);
 			rooms[roomNumber] = {movements: [], last: startingTime};
 			console.log('init', roomNumber, rooms[roomNumber]);
+		} else if (currentNumberOfPeople === rooms[roomNumber].currentNumberOfPeople) {
+			console.log(`room${roomNumber} skipped`);
+			return;
 		}
 		rooms[roomNumber].currentNumberOfPeople = currentNumberOfPeople;
 		rooms[roomNumber].peopleLimitNumber = peopleLimitNumber;
@@ -112,8 +115,10 @@ db.collection('rooms').onSnapshot((snapshot) => {
 			mSnapshot.forEach(mDoc => {
 				let {entrata, timestamp, userId2} = mDoc.data();
 				timestamp = new Date(timestamp.seconds*1000);
+				if(timestamp.getTime() === rooms[roomNumber].last.getTime())
+					return; // firebase's bug?
 				rooms[roomNumber].movements.push({entrata, timestamp, userId2});
-				console.log('movements', {entrata, timestamp, userId2});
+				console.log('movements:', {entrata, timestamp, userId2});
 
 				if(rooms[roomNumber].last < timestamp)
 					rooms[roomNumber].last = timestamp;
