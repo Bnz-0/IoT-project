@@ -23,10 +23,12 @@ const firebaseConfig = {
 	measurementId: "G-6L1SS06PH5"
 };
 
+let ID_TOKEN;
+
 
 function discover(device) {
 	// TODO: @firebase/firestore: Firestore (7.18.0): Connection GRPC stream error. Code: 1 Message: 1 CANCELLED: Disconnecting idle stream. Timed out waiting for new targets.
-	dbController.registerMovementDB(db,device,room)
+	dbController.registerMovementDB(db,device,room,ID_TOKEN);
 }
 
 
@@ -42,8 +44,9 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 scanner.on('discover', discover);
 scannerAuth.logOutScanner(auth).then(()=>{
-	scannerAuth.logInScanner(auth).then(()=>{
-		console.log("scanner for",room,"started!")
+	scannerAuth.logInScanner(auth).then((idToken)=>{
+		console.log("scanner for",room,"started!", idToken.substring(0,10));
+		ID_TOKEN = idToken;
 		scanner.start();
 	});
 });

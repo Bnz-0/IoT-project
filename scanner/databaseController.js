@@ -28,80 +28,90 @@ async function calculateMovementType(db,room,userId2){
 
 
 async function retrieveFcm(userId2,db){
-  const usersCollection = await db.collection('users');
-  const snapshot = await usersCollection.where('userId2', '==', userId2).limit(1).get();
-  if (snapshot.empty) {
-    // TODO throw Error
-    return "";
-  }else{
-		console.log();
-    return snapshot.docs[0].get("fcm");
-  }
+	const usersCollection = await db.collection('users');
+	const snapshot = await usersCollection.where('userId2', '==', userId2).limit(1).get();
+	return snapshot.empty ? undefined : snapshot.docs[0].get("fcm");
 }
 
 
-async function callApiFunctionUnSubscribeFcmToTopic(fcm,entrata,topic){
-	let options = {
+async function callApiFunctionUnSubscribeFcmToTopic(fcm,entrata,topic,idToken){
+	const apiUrlReq = "api/un-subscribe-fcm-to-topic";
+	console.log(`callApiFunctionUnSubscribeFcmToTopic(${fcm},${entrata},${topic},${idToken.substring(0,10)})`)
+	request({
 		'method': 'POST',
-		'url': process.env.CLOUD_FUNCTION_BASE_URL+'api/un-subscribe-fcm-to-topic',
+		'url': process.env.CLOUD_FUNCTION_BASE_URL+apiUrlReq,
 		'headers': {
 			'Content-Type': 'application/json'
 		},
 		body: JSON.stringify({
 			fcm:fcm,
 			subscribe:entrata,
-			topic:topic
+			topic:topic,
+			idToken:idToken,
 		})
-	};
-	let result = await request(options); // TODO PARSE AND CONSOLE LOG BODY message
-	//if (error) throw new Error(error);
-	//console.log(result);
+	},
+	(error, response, body) => {
+		if(error)
+			console.error(`An error occurred while contact '${apiUrlReq}':`, error);
+		else
+			console.log(`'${apiUrlReq}' response:`, body);
+	});
 }
 
-async function callApiFunctionSendAlert(db,roomTopic){
-	let options = {
-	  'method': 'POST',
-	  'url': process.env.CLOUD_FUNCTION_BASE_URL+'api/send-alert',
-	  'headers': {
-	    'Content-Type': 'application/json'
-	  },
-	  body: JSON.stringify({topic:roomTopic})
-	};
+async function callApiFunctionSendAlert(db,roomTopic,idToken){
+	console.log(`callApiFunctionSendAlert(db,${roomTopic},${idToken.substring(0,10)})`)
 	const roomDoc = await db.collection('rooms').doc(roomTopic).get();
-	const numOfPeople = await roomDoc.data().currentNumberOfPeople;
+	const numOfPeople = roomDoc.data().currentNumberOfPeople;
 	const limit = roomDoc.data().peopleLimitNumber;
 	if(numOfPeople > limit){
-		let result = await request(options);
-		//if (error) throw new Error(error);
-		//console.log(result);  // TODO PARSE AND CONSOLE LOG BODY message
+		const apiUrlReq = "api/send-alert";
+		request({
+			'method': 'POST',
+			'url': process.env.CLOUD_FUNCTION_BASE_URL+apiUrlReq,
+			'headers': {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				topic:roomTopic,
+				idToken:idToken,
+			})
+		},
+		(error, response, body) => {
+			if(error)
+				console.error(`An error occurred while contact '${apiUrlReq}':`, error);
+			else
+				console.log(`'${apiUrlReq}' response:`, body);
+		});
 	}
 }
 
-async function registerMovementDB(db,userId2,room){
+async function registerMovementDB(db,userId2,room,idToken){
 	try{
-		const timestamp = new Date();
 		const fcmToken = await retrieveFcm(userId2,db);
+		if(!fcmToken) {
+			console.error(`The userId2 "${userId2}" does not exists, this movement will be ignored`);
+			return;
+		}
 		const entrata = await calculateMovementType(db,room,userId2);
 		const roomRef = await db.collection('rooms').doc(room);
 
 		//send request to cloud function to subscribe to  roomTopic
-		await callApiFunctionUnSubscribeFcmToTopic(fcmToken,entrata,room);
+		await callApiFunctionUnSubscribeFcmToTopic(fcmToken,entrata,room,idToken);
 
 		/*LOG the movement*/
 		//async op.
 		roomRef.collection('movimenti').add({
 			entrata: entrata,
-			timestamp: timestamp,
+			timestamp: new Date(),
 			userId2: userId2,
 		});
 
 		/**Update Room status*/
-		const roomDoc = await roomRef.get(); //TODO: unused?
 		roomRef.update({
 			currentNumberOfPeople:firebase.firestore.FieldValue.increment(entrata?1:-1)
 		}).then(()=>{
 			// check if we need to send alert message
-			callApiFunctionSendAlert(db,room);
+			callApiFunctionSendAlert(db,room,idToken);
 		});
 	}catch(error){
 		console.log(error);

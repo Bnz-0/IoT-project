@@ -11,10 +11,10 @@ const serviceAccount = require("./permission.json");
 
 /**INIT**/
 admin.initializeApp({
- credential: admin.credential.cert(serviceAccount),
- databaseURL: "https://dibris-iot-project.firebaseio.com"
+	credential: admin.credential.cert(serviceAccount),
+	databaseURL: "https://dibris-iot-project.firebaseio.com"
 });
-const db = admin.firestore();
+
 const app = express();
 app.use(bodyParser.json());
 
@@ -58,37 +58,54 @@ async function sendAlert(roomTopic){
     .catch((error) => {
       console.log('Error sending message:', error);
       throw error;
-    });
+	});
+	/* TODO
+	Error sending message: FirebaseAppError: Credential implementation provided to initializeApp() 
+	via the "credential" property failed to fetch a valid Google OAuth2 access token with the following error: 
+	"Error fetching access token: invalid_grant (Invalid grant: account not found)". There are two likely causes: 
+	(1) your server time is not properly synced or (2) your certificate key file has been revoked. 
+	To solve (1), re-sync the time on your server. To solve (2), make sure the key ID for your key file is 
+	still present at https://console.firebase.google.com/iam-admin/serviceaccounts/project. 
+	If not, generate a new key file at https://console.firebase.google.com/project/_/settings/serviceaccounts/adminsdk.
+	*/
 }
 
 /*EXPRESS ROUTES****************************** */
 
 app.post('/api/un-subscribe-fcm-to-topic', async (req,res) => {
-  //TODO l api è aperat chiunque può eseguire le funzioni:
-  //impostare che solo scanner può chimarle
-  try{
-    let fcm = req.body.fcm;
-    let topic = req.body.topic;
-    let sub = req.body.subscribe;
-    await (sub? subscribeUserToRoomTopic(fcm,topic):unsubscribeUserToRoomTopic(fcm,topic));
-    return res.status(200).send("fcm successfully updated.");
-  }catch(error){
-    console.log(error);
-    return res.status(500).send(error);
-  }
+	console.log('SUB request', req.body);
+	admin.auth().verifyIdToken(req.body.idToken).then(async (claims) => {
+		console.log('claims:', claims);
+		if (claims.scanner === true) {
+			try {
+				const fcm = req.body.fcm;
+				const topic = req.body.topic;
+				const sub = req.body.subscribe;
+				await (sub? subscribeUserToRoomTopic(fcm,topic):unsubscribeUserToRoomTopic(fcm,topic));
+				return res.status(200).send("fcm successfully updated.");
+			} catch(error) {
+				console.log(error);
+				return res.status(500).send(error);
+			}
+		}
+	});
 });
 
 app.post('/api/send-alert', async (req,res) => {
-  //TODO l api è aperat chiunque può eseguire le funzioni:
-  //impostare che solo scanner può chimarle
-  try{
-    let topic = req.body.topic;
-    await sendAlert(topic);
-    return res.status(200).send("alert sent.");
-  }catch(error){
-    console.log(error);
-    return res.status(500).send(error);
-  }
+  	console.log('ALERT request', req.body);
+	admin.auth().verifyIdToken(req.body.idToken).then(async (claims) => {
+		console.log('claims:', claims);
+		if (claims.scanner === true) {
+			try {
+				console.log('sending alert to topic', req.body.topic);
+				await sendAlert(req.body.topic);
+				return res.status(200).send("alert sent.");
+			} catch(error) {
+				console.log(error);
+				return res.status(500).send(error);
+			}
+		}
+	});
 });
 
 exports.app = functions.https.onRequest(app);
