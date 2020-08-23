@@ -60,12 +60,12 @@ async function sendAlert(roomTopic){
       throw error;
 	});
 	/* TODO
-	Error sending message: FirebaseAppError: Credential implementation provided to initializeApp() 
-	via the "credential" property failed to fetch a valid Google OAuth2 access token with the following error: 
-	"Error fetching access token: invalid_grant (Invalid grant: account not found)". There are two likely causes: 
-	(1) your server time is not properly synced or (2) your certificate key file has been revoked. 
-	To solve (1), re-sync the time on your server. To solve (2), make sure the key ID for your key file is 
-	still present at https://console.firebase.google.com/iam-admin/serviceaccounts/project. 
+	Error sending message: FirebaseAppError: Credential implementation provided to initializeApp()
+	via the "credential" property failed to fetch a valid Google OAuth2 access token with the following error:
+	"Error fetching access token: invalid_grant (Invalid grant: account not found)". There are two likely causes:
+	(1) your server time is not properly synced or (2) your certificate key file has been revoked.
+	To solve (1), re-sync the time on your server. To solve (2), make sure the key ID for your key file is
+	still present at https://console.firebase.google.com/iam-admin/serviceaccounts/project.
 	If not, generate a new key file at https://console.firebase.google.com/project/_/settings/serviceaccounts/adminsdk.
 	*/
 }
@@ -109,111 +109,3 @@ app.post('/api/send-alert', async (req,res) => {
 });
 
 exports.app = functions.https.onRequest(app);
-
-
-
-
-
-
-
-
-/*
-
-exports.processSignUp = functions.auth.user().onCreate((user) => {
-  const customClaims = {
-    userId2:  1,
-    scanner: false
-  };
-  // Set custom user claims on this newly created user.
-  return admin.auth().setCustomUserClaims(user.uid, customClaims)
-    .then(() => {
-      // Update real-time database to notify client to force refresh.
-      const metadataRef = admin.database().ref("metadata/" + user.uid);
-      // Set the refresh time to the current UTC timestamp.
-      // This will be captured on the client to force a token refresh.
-      return metadataRef.set({refreshTime: new Date().getTime()});
-    })
-    .catch(error => {
-      console.log(error);
-    });
-});
-app.get('/api/scanner',async(req,res)=>{
-  admin.auth().setCustomUserClaims("Ou5RmTxMcJgVUeYhPOKQmu9XLyJ2", {scanner: true}).then(() => {
-    return res.status(200).send("ok");
-});
-});
-app.post('/api/register-movement-room', async (req,res) => { //todo controllare bene gli await ecc
-  try{
-    if(req.context.auth.token.scanner != true){
-      return res.status(200).send("Unsufficient permission.");// todo change
-    }
-    let room = req.body.room,
-      userId2 = req.body.userId2,
-      timestamp = new Date(),
-      fcmToken = await retrieveFcm(userId2),
-      entrata = await calculateMovementType(room,userId2);
-    const roomRef = await db.collection('rooms').doc(room);
-    const roomDoc = await roomRef.get();
-    entrata?subscribeUserToRoomTopic(fcmToken,room):unsubscribeUserToRoomTopic(fcmToken,room);
-    await roomRef.collection('movimenti').add({
-      entrata: entrata,
-      timestamp: timestamp,
-      userId2: userId2,
-    });
-    if (!roomDoc.exists) {
-      console.log('No such document!');
-      //todo throw
-    }
-    let newNumOfPeople = roomDoc.data().currentNumberOfPeople+(entrata?1:-1);
-    roomRef.update({currentNumberOfPeople:newNumOfPeople});
-    if(newNumOfPeople > roomDoc.data().peopleLimitNumber){   // todo solo per entrata
-      sendAlert(room);
-    }
-    return res.status(200).send("movement registered");
-  }catch(error){
-    console.log(error);
-    return res.status(500).send(error);
-  }
-});
-
-app.post('/api/register-fcm-token', async (req,res) => {
-  try{
-    let fcmToken = req.body.fcmToken;
-    let uid = req.body.userId;
-    await db.collection('users').doc(uid).set({
-      fcm: fcmToken
-    });
-    return res.status(200).send("fcm successfully updated.");
-  }catch(error){
-    console.log(error);
-    return res.status(500).send(error);
-  }
-});
-
-async function calculateMovementType(room,userId){
-  const currentPeopleSet = await db.collection('rooms').doc(room).collection('currentPeople');
-  const snapshot = await currentPeopleSet.where('userId', '==', userId).limit(1).get();
-  if (snapshot.empty) {
-    console.log(userId+" entered in "+ room);
-    await currentPeopleSet.add({
-      userId: userId
-    });
-    return MovementType.ENTRY;
-  }else{
-    await snapshot.docs[0].ref.delete();
-    return MovementType.EXIT;
-  }
-}
-
-
-async function retrieveFcm(userId2){
-  const usersCollection = await db.collection('users');
-  const snapshot = await usersCollection.where('uid2', '==', userId2).limit(1).get();
-  if (snapshot.empty) {
-    // TODO throw Error
-    return "";
-  }else{
-    return snapshot.docs[0].get("fcm");
-  }
-}
-*/
