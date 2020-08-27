@@ -16,4 +16,6 @@
     <string name="password">Password</string>
     <string name="email">Email</string>
     <string name="log_in_or_register">Log In or Register</string>
+    <string name="notification_title">Alert!</string>
+    <string name="channel_name">ICTS-emitter alert channel</string>
 </resources>
