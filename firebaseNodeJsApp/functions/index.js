@@ -59,15 +59,6 @@ async function sendAlert(roomTopic){
       console.log('Error sending message:', error);
       throw error;
 	});
-	/* TODO
-	Error sending message: FirebaseAppError: Credential implementation provided to initializeApp()
-	via the "credential" property failed to fetch a valid Google OAuth2 access token with the following error:
-	"Error fetching access token: invalid_grant (Invalid grant: account not found)". There are two likely causes:
-	(1) your server time is not properly synced or (2) your certificate key file has been revoked.
-	To solve (1), re-sync the time on your server. To solve (2), make sure the key ID for your key file is
-	still present at https://console.firebase.google.com/iam-admin/serviceaccounts/project.
-	If not, generate a new key file at https://console.firebase.google.com/project/_/settings/serviceaccounts/adminsdk.
-	*/
 }
 
 /*EXPRESS ROUTES****************************** */
