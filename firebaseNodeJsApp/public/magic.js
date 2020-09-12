@@ -17,7 +17,7 @@ function updateDashboard(roomNumber) {
 	// push "current" into "data" for the number oh hours that separate "from" to "to"
 	function pushData(from, to) {
 		let curr = new Date(from.getTime());
-		const color = current >= rooms[roomNumber].peopleLimitNumber ?
+		const color = current > rooms[roomNumber].peopleLimitNumber ?
 			stdColor['alert']
 			: current >= rooms[roomNumber].peopleLimitNumber * 0.7 ?
 				stdColor['warning']
@@ -35,16 +35,16 @@ function updateDashboard(roomNumber) {
 	for(let m of rooms[roomNumber].movements.sort((a,b) => a.timestamp-b.timestamp)) {
 		if(currentHour === null)
 			currentHour = m.timestamp.trim('y','h');
-		
+
 		if(currentHour.getTime() !== m.timestamp.trim('y','h').getTime())
 			currentHour = pushData(currentHour, m.timestamp.trim('y','h'));
-		
+
 		current += m.entrata ? +1 : -1;
 	}
 
 	// fill the data form the latest movements to now
 	pushData(currentHour, new Date().trim('y','h'));
-	
+
 	console.log(data)
 
 
@@ -55,7 +55,7 @@ function updateDashboard(roomNumber) {
 	if(!chartContainer) {
 		chartContainer = document.createElement('div');
 		chartContainer.className = "chart";
-		chartContainer.id = "room_"+roomNumber;	
+		chartContainer.id = "room_"+roomNumber;
 		document.getElementById('dashboard').appendChild(chartContainer);
 	} else {
 		while(chartContainer.firstChild)
