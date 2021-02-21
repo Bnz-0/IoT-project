@@ -1,3 +1,6 @@
+# Internet of Things Project
+
+Repo for the project of the "Internet of Things" master course
 
 Link to the video presentation: https://drive.google.com/file/d/1x371WWQWB2B9FxdQGEYzCUaHY6b0qLUb/view?usp=sharing
 
